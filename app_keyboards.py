@@ -69,6 +69,14 @@ class AppCategoryKeyboard(AppInlineKeyboard):
         self.keyboard = []
         for i in range(1, self.size+1):
             self.keyboard.append({f"Категория{i}": f"category{i}"})
-
-
 category_kb = AppCategoryKeyboard()
+
+
+class AppSubcategoryKeyboard(AppInlineKeyboard):
+
+
+    def __init__(self):
+        self.keyboard = []
+        for i in range(1, self.size+1):
+            self.keyboard.append({f"Подкатегория{i}": f"subcategory{i}"})
+subcategory_kb = AppSubcategoryKeyboard()
