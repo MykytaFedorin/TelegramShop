@@ -1,15 +1,16 @@
 from loader import form_router, bot
 from aiogram.types import FSInputFile
-from aiogram.types import CallbackQuery, Message
-from app_keyboards import categories_kb 
+from aiogram.types import CallbackQuery
+import app_keyboards as app_kb
 from data.config import data_dir_path
-
+from aiogram.fsm.context import FSMContext
 
 
 @form_router.callback_query(lambda cb: cb.data == "catalog")
 async def show_categories(callback_query: CallbackQuery):
-    await callback_query.message.edit_text("Выберите категорию товара:",
-                                           reply_markup=categories_kb.as_markup())
+    kb = await app_kb.category_kb.show_page()
+    await callback_query.message.edit_text(f"Выберите категорию товара: 1",
+                                           reply_markup=kb.as_markup())
 
 
 @form_router.callback_query(lambda cb: cb.data in ["category1"])
