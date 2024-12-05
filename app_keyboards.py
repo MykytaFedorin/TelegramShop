@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import List, Dict, Any
 from app_enums import ShiftDirection
 from app_logger import logger
+import database.db_connection as db
 
 
 main_kb = InlineKeyboardBuilder()
@@ -66,10 +67,18 @@ class AppCategoryKeyboard(AppInlineKeyboard):
 
 
     def __init__(self):
+        categories = db.fetch_all("category",
+                                  ["id",
+                                   "category_name",
+                                   "parent_id"]
+                                  )
+        logger.debug(f"Categories: {categories}")
         self.keyboard = []
-        for i in range(1, self.size+1):
-            self.keyboard.append({f"Категория{i}": f"category{i}"})
-category_kb = AppCategoryKeyboard()
+        for category in categories:
+            if category["parent_id"] is None:
+                name = category['category_name']
+                self.keyboard.append({f"{name}":
+                                      f"{name}"})
 
 
 class AppSubcategoryKeyboard(AppInlineKeyboard):
@@ -79,4 +88,7 @@ class AppSubcategoryKeyboard(AppInlineKeyboard):
         self.keyboard = []
         for i in range(1, self.size+1):
             self.keyboard.append({f"Подкатегория{i}": f"subcategory{i}"})
+
+
+category_kb = AppCategoryKeyboard()
 subcategory_kb = AppSubcategoryKeyboard()
