@@ -72,8 +72,9 @@ class AppCategoryKeyboard(AppInlineKeyboard):
         self.keyboard = []
         for category in categories:
             name = category['category_name']
+            id_ = category['id']
             self.keyboard.append({f"{name}":
-                                  f"{name}"})
+                                  f"{id_}"})
 
 
 category_kb = AppCategoryKeyboard(root_categories)
