@@ -4,7 +4,7 @@ from typing import List, Dict, Any
 from app_enums import ShiftDirection
 from app_logger import logger
 import database.db_connection as db
-
+from data.config import root_categories
 
 main_kb = InlineKeyboardBuilder()
 main_kb.button(text="Каталог",
@@ -29,6 +29,8 @@ class AppInlineKeyboard(ABC):
         kb = InlineKeyboardBuilder()
         start_index = (self.page-1) * self.page_size
         end_index = (self.page-1) * self.page_size + self.page_size
+        if end_index > len(self.keyboard):
+            end_index = len(self.keyboard)
         try:
             for i in range(start_index, end_index):
                 for text, callback_data in self.keyboard[i].items():
@@ -66,29 +68,12 @@ class AppInlineKeyboard(ABC):
 class AppCategoryKeyboard(AppInlineKeyboard):
 
 
-    def __init__(self):
-        categories = db.fetch_all("category",
-                                  ["id",
-                                   "category_name",
-                                   "parent_id"]
-                                  )
-        logger.debug(f"Categories: {categories}")
+    def __init__(self, categories):
         self.keyboard = []
         for category in categories:
-            if category["parent_id"] is None:
-                name = category['category_name']
-                self.keyboard.append({f"{name}":
-                                      f"{name}"})
+            name = category['category_name']
+            self.keyboard.append({f"{name}":
+                                  f"{name}"})
 
 
-class AppSubcategoryKeyboard(AppInlineKeyboard):
-
-
-    def __init__(self):
-        self.keyboard = []
-        for i in range(1, self.size+1):
-            self.keyboard.append({f"Подкатегория{i}": f"subcategory{i}"})
-
-
-category_kb = AppCategoryKeyboard()
-subcategory_kb = AppSubcategoryKeyboard()
+category_kb = AppCategoryKeyboard(root_categories)
