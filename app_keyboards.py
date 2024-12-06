@@ -15,6 +15,9 @@ main_kb.button(text="FAQ",
                callback_data="faq")
 main_kb.adjust(2, repeat=True)
 
+quantity_kb = InlineKeyboardBuilder()
+quantity_kb.button(text="+", callback_data="plus")
+quantity_kb.button(text="-", callback_data="minus")
 
 class AppInlineButton(NamedTuple):
     name: str
@@ -110,6 +113,8 @@ class AppCategoryKeyboard(AppInlineKeyboard):
             btn = AppInlineButton(name=name,
                                   callback_data=name)
             self.keyboard.append(btn)
+
+
 
 
 category_kb = AppCategoryKeyboard(root_categories)

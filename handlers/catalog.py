@@ -2,6 +2,7 @@ from loader import form_router, bot
 from aiogram.types import FSInputFile
 from aiogram.types import CallbackQuery
 import app_keyboards as app_kb
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from data.config import data_dir_path
 from aiogram.fsm.context import FSMContext
 from app_states import CatalogStates
@@ -110,6 +111,9 @@ from aiogram.exceptions import TelegramNetworkError
 async def show_product(callback_query: CallbackQuery,
                        image_path: str,
                        caption: str) -> None:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="Купить",
+              callback_data="buy")
     try:
         if not os.path.exists(image_path):
             logger.error(f"Файл {image_path} не найден.")
@@ -133,13 +137,14 @@ async def show_product(callback_query: CallbackQuery,
             caption = caption[:1021] + "..."
 
         image_file = FSInputFile(image_path)
-
-        for attempt in range(3):  # Повторная попытка
+        
+        for attempt in range(3):
             try:
                 await bot.send_photo(
                     chat_id=callback_query.from_user.id,
                     photo=image_file,
-                    caption=caption
+                    caption=caption,
+                    reply_markup=kb.as_markup()
                 )
                 break
             except TelegramNetworkError as e:
@@ -148,9 +153,35 @@ async def show_product(callback_query: CallbackQuery,
                     raise
                 await asyncio.sleep(2)
 
-        await callback_query.answer()  # Ответ клиенту о выполнении
+        await callback_query.answer()
 
     except Exception as e:
         logger.error(f"Ошибка при отправке изображения: {e}")
         await callback_query.answer("Ошибка при отправке изображения.", show_alert=True)
+
+
+@form_router.callback_query(lambda cb: cb.data == "buy")
+async def handle_buying(callback_query: CallbackQuery,
+                        state: FSMContext):
+    await state.update_data(quantity=1)
+    await callback_query.answer()
+    await bot.send_message(chat_id=callback_query.from_user.id,
+                           text="Выберите кол-во: 1",
+                           reply_markup=app_kb.quantity_kb.as_markup())
+
+
+@form_router.callback_query(lambda cb: cb.data in ["plus", "minus"])
+async def handle_quantity_changing(callback_query: CallbackQuery,
+                                   state: FSMContext):
+    await callback_query.answer()
+    data = await state.get_data()
+    quantity = int(data["quantity"])
+    if callback_query.data == "plus":
+        quantity += 1
+        await state.update_data(quantity=quantity)
+    else:
+        quantity -= 1
+        await state.update_data(quantity=quantity)
+    await callback_query.message.edit_text(f"Выберите кол-во: {quantity}",
+                                           reply_markup=app_kb.quantity_kb.as_markup())
 
