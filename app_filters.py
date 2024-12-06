@@ -7,6 +7,8 @@ from aiogram.fsm.state import State, StatesGroup
 
 
 class AppCbStateFilter(Filter):
+    """Пропускает только заданные callback_data
+       в заданных состояниях"""
     def __init__(self, states: List[State],
                  cb_values: List[Any]):
         self.states = states

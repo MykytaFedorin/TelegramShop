@@ -1,5 +1,5 @@
 import asyncpg
-from typing import List, Dict
+from typing import List, Dict, Optional
 import data.config as app_data
 from app_logger import logger
 
@@ -7,6 +7,14 @@ from app_logger import logger
 class App_DB_Connection:
     def __init__(self):
         self.connection = None
+
+
+    async def __aenter__(self):
+        await self.connect()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
 
     async def connect(self):
         """
@@ -56,5 +64,14 @@ class App_DB_Connection:
         except Exception as ex:
             logger.error(f"Error fetching data from table '{table}': {ex}")
             raise
+
+    async def fetch_raw(self, query: str, *params) -> Optional[List]:
+        try:
+            if self.connection:
+                res = await self.connection.fetch(query, *params)
+                if res:
+                    return res
+        except Exception as ex:
+            logger.error(f"Ошибка выполнения сырого запроса: {ex}")
 
 db = App_DB_Connection()
