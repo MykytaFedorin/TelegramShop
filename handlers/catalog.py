@@ -15,6 +15,7 @@ logger.debug(f"init catalog.py {root_categories}")
 @form_router.callback_query(lambda cb: cb.data == "catalog")
 async def show_categories(callback_query: CallbackQuery, 
                           state: FSMContext):
+    """Обработчик для нажатия кнопки Каталог в главном меню"""
     logger.info(f"Юзер нажал каталог")
     await callback_query.answer()
     await state.set_state(CatalogStates.categories)
@@ -26,6 +27,9 @@ async def show_categories(callback_query: CallbackQuery,
 
 
 async def choose_root(categories):
+    """Функция для выбора только
+    корневых категорий в каталоге"""
+
     res = []
     for cat in categories:
         if cat["parent_id"] is None:
@@ -35,6 +39,7 @@ async def choose_root(categories):
 
 
 async def choose_subcategory(parent_category: str) -> List[Dict]:
+    """Выбирает все подкатегории из данной категории"""
     chosen_categories = []
     parent_id = None
     for cat in root_categories:
@@ -50,6 +55,8 @@ async def choose_subcategory(parent_category: str) -> List[Dict]:
 @form_router.callback_query(AppCbStateFilter(states=[CatalogStates.categories],
                                              cb_values=root_cat_titles))
 async def show_subcategories(callback_query: CallbackQuery):
+    """Обработчик для показа всех подкатегорий
+    выбранной пользователем категории"""
     logger.info(f"Юзер выбрал категорию {callback_query.data}")
     await callback_query.answer()
     subcategories = await choose_subcategory(str(callback_query.data))
@@ -58,6 +65,7 @@ async def show_subcategories(callback_query: CallbackQuery):
     kb = await keyboard.show_page()
     await callback_query.message.edit_text(text="subcategories",
                                            reply_markup=kb.as_markup())
+
 
 async def show_product(callback_query: CallbackQuery):
     image_path = f"{data_dir_path}/avatar.jpg"
