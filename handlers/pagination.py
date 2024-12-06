@@ -12,7 +12,7 @@ from app_filters import AppCbStateFilter
                                              cb_values=["next_page",
                                                         "previous_page"]))
 async def switch_page_categories(callback_query: CallbackQuery):
-
+    """Обработчик для нажатых кнопок вперед, назад"""
     logger.info(f"Юзер нажал кнопку погинации в категориях")
     kb = await update_keyboard(callback_query, app_kb.category_kb)
     await callback_query.message.edit_text("Категории", reply_markup=kb.as_markup())
@@ -20,6 +20,7 @@ async def switch_page_categories(callback_query: CallbackQuery):
 
 async def update_keyboard(callback_query: CallbackQuery,
                           keyboard: app_kb.AppInlineKeyboard) -> InlineKeyboardBuilder:
+    """Функция обновления клавиатуры в направлении пагинации"""
     await callback_query.answer()
     if callback_query.data == "next_page":
         await keyboard.switch_page(ShiftDirection.FORWARD)
