@@ -29,6 +29,8 @@ class AppInlineKeyboard(ABC):
 
 
     async def show_page(self) -> InlineKeyboardBuilder:
+        """Возвращает часть всей клавиатуры,
+           которая соответствует актуальной странице"""
         logger.debug("show_page func")
         kb = InlineKeyboardBuilder()
         start_index, end_index = await self.get_btn_range()
@@ -45,6 +47,8 @@ class AppInlineKeyboard(ABC):
     
 
     async def get_btn_range(self) -> Tuple:
+        """Возвращает нужный диапазон индексов кнопок
+           исходя из актуальных настроек клавиатуры"""
         logger.debug("get_btn_range_func")
         start_index = (self.page-1) * self.page_size
         end_index = (self.page-1) * self.page_size + self.page_size
@@ -52,15 +56,19 @@ class AppInlineKeyboard(ABC):
             end_index = len(self.keyboard)
         return start_index, end_index
 
+
     async def create_page(self,
                           kb: InlineKeyboardBuilder, 
                           btns: List[AppInlineButton]) -> None: 
+        """Создает InlineKeyboardBuilder из списка кнопок"""
         logger.debug("create_page func")
         for btn in btns:
             kb.button(text=btn.name,
                       callback_data=btn.callback_data)
 
+
     async def add_ctrl_kb(self, kb: InlineKeyboardBuilder) -> None:
+        """Добавляет в клавиатуру кнопки управления"""
         logger.debug("add_ctrl_kb func")
         if (self.page == 1 and
             self.page_size < len(self.keyboard)):
@@ -83,6 +91,7 @@ class AppInlineKeyboard(ABC):
 
 
     async def switch_page(self, direction: ShiftDirection) -> None:
+        """Меняет актуальную страницу в настройках клавиатуры"""
         logger.debug("switch_page func")
         if direction is ShiftDirection.BACK:
             self.page = self.page - 1
