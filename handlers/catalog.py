@@ -7,12 +7,14 @@ from aiogram.fsm.context import FSMContext
 from app_states import CatalogStates
 from app_logger import logger
 from typing import Dict, List
+from data.config import root_categories, root_cat_titles
+from app_filters import AppCbStateFilter
 
+logger.debug(f"init catalog.py {root_categories}")
 
 @form_router.callback_query(lambda cb: cb.data == "catalog")
 async def show_categories(callback_query: CallbackQuery, 
                           state: FSMContext):
-    from data.config import root_categories
     logger.info(f"Юзер нажал каталог")
     await callback_query.answer()
     await state.set_state(CatalogStates.categories)
@@ -32,23 +34,25 @@ async def choose_root(categories):
     return res 
 
 
-async def choose_subcategory(parent_id: int) -> List[Dict]:
-    from data.config import root_categories
+async def choose_subcategory(parent_category: str) -> List[Dict]:
     chosen_categories = []
-    logger.debug(root_categories)
+    parent_id = None
+    for cat in root_categories:
+        if cat["category_name"] == parent_category:
+            parent_id = cat["id"]
+            break
     for cat in root_categories:
         if cat["parent_id"] is parent_id:
             chosen_categories.append(cat)
     return chosen_categories
 
 
-@form_router.callback_query(CatalogStates.categories)
-async def show_subcategories(callback_query: CallbackQuery,
-                             state: FSMContext):
+@form_router.callback_query(AppCbStateFilter(states=[CatalogStates.categories],
+                                             cb_values=root_cat_titles))
+async def show_subcategories(callback_query: CallbackQuery):
     logger.info(f"Юзер выбрал категорию {callback_query.data}")
     await callback_query.answer()
-    await state.set_state(CatalogStates.subcategories)
-    subcategories = await choose_subcategory(int(str(callback_query.data)))
+    subcategories = await choose_subcategory(str(callback_query.data))
     logger.debug(subcategories)
     keyboard = app_kb.AppCategoryKeyboard(subcategories)
     kb = await keyboard.show_page()

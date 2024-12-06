@@ -20,6 +20,7 @@ root_categories = []
 
 async def init_categories():
     '''initiate root_categories in config module'''
+    logger.debug(f"init categories")
     global root_categories
     db = App_DB_Connection()
     await db.connect()
@@ -37,4 +38,4 @@ async def init_titles():
     global root_categories
     if root_categories:
         for cat in root_categories:
-            root_categories.append(cat["category_name"])
+            root_cat_titles.append(cat["category_name"])
