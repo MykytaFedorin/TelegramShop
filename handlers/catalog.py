@@ -1,4 +1,5 @@
 from loader import form_router, bot
+from asyncpg.exceptions import UniqueViolationError
 from aiogram.types import FSInputFile
 from aiogram.types import CallbackQuery
 import app_keyboards as app_kb
@@ -218,11 +219,27 @@ async def handle_quantity_changing(callback_query: CallbackQuery,
                                            reply_markup=app_kb.quantity_kb.as_markup())
 
 async def add_product_to_cart(product_id: int, 
-                              cart_id: int):
+                              cart_id: int,
+                              quantity: int):
     db = App_DB_Connection()
     await db.connect()
-    query = """INSERT INTO product_in_cart (product_id, cart_id) VALUES ($1, $2);"""
-    await db.connection.execute(query, product_id, cart_id)
+    query = """INSERT INTO product_in_cart (product_id, cart_id, quantity) VALUES ($1, $2, $3);"""
+    try:
+        await db.connection.execute(query, product_id, cart_id, quantity)
+    except UniqueViolationError as ex:
+        query = """UPDATE product_in_cart SET quantity = quantity + $1 
+        WHERE cart_id = $2 AND product_id = $3;"""
+        await db.connection.execute(query, quantity, cart_id, product_id)
+    query = """WITH prices AS (
+            SELECT price 
+            FROM product 
+            WHERE id = $1
+            )
+            UPDATE cart
+            SET price = price + (SELECT price * $2 FROM prices)
+            WHERE id = $3;
+            """
+    await db.connection.execute(query, product_id, quantity, cart_id)
 
 
 @form_router.callback_query(lambda cb: cb.data == "continue")
@@ -231,7 +248,10 @@ async def continue_to_purchase(callback_query: CallbackQuery,
     await callback_query.answer()
     data = await state.get_data()
     product_id = data["product_id"]
-    await add_product_to_cart(product_id, data["cart_id"])
+    quantity = data["quantity"]
+    await add_product_to_cart(product_id,
+                              data["cart_id"],
+                              quantity)
     await bot.send_message(chat_id=callback_query.from_user.id,
                            text=f"{product_id}")
 
