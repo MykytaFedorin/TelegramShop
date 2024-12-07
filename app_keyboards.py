@@ -18,6 +18,7 @@ main_kb.adjust(2, repeat=True)
 quantity_kb = InlineKeyboardBuilder()
 quantity_kb.button(text="+", callback_data="plus")
 quantity_kb.button(text="-", callback_data="minus")
+quantity_kb.button(text="Продолжить", callback_data="continue")
 
 class AppInlineButton(NamedTuple):
     name: str

@@ -94,12 +94,13 @@ async def send_products(callback_query: CallbackQuery, category: str) -> None:
     logger.debug(f"category_id: {category_id}")
     
     async with App_DB_Connection() as db:
-        get_product = "SELECT photo_path, description FROM product WHERE category = $1;"
+        get_product = "SELECT id, photo_path, description FROM product WHERE category = $1;"
         products = await db.connection.fetch(get_product, category_id)
         logger.debug(products) 
         for product in products:
             logger.debug(f"product: {product['photo_path']}")
             await show_product(callback_query,
+                               product["id"],
                                product["photo_path"],
                                product["description"])
 
@@ -109,11 +110,12 @@ from aiogram.types.input_file import FSInputFile
 from aiogram.exceptions import TelegramNetworkError
 
 async def show_product(callback_query: CallbackQuery,
+                       product_id: int,
                        image_path: str,
                        caption: str) -> None:
     kb = InlineKeyboardBuilder()
     kb.button(text="Купить",
-              callback_data="buy")
+              callback_data=f"buy_{product_id}")
     try:
         if not os.path.exists(image_path):
             logger.error(f"Файл {image_path} не найден.")
@@ -160,10 +162,40 @@ async def show_product(callback_query: CallbackQuery,
         await callback_query.answer("Ошибка при отправке изображения.", show_alert=True)
 
 
-@form_router.callback_query(lambda cb: cb.data == "buy")
+async def create_cart(customer_id: int):
+    db = App_DB_Connection()
+    await db.connect()
+    query = """WITH cart_exist AS (
+    SELECT id 
+    FROM cart 
+    WHERE customer_id = $1 AND status = 'pending'
+), 
+inserted_cart AS (
+    INSERT INTO cart (price, status, customer_id)
+    SELECT 0.00, 'pending', $1
+    WHERE NOT EXISTS (SELECT 1 FROM cart_exist)
+    RETURNING id
+)
+SELECT id 
+FROM cart_exist
+UNION ALL
+SELECT id 
+FROM inserted_cart;
+;
+"""
+    return await db.connection.fetchval(query, customer_id)
+
+
+
+@form_router.callback_query(lambda cb: "buy" in cb.data)
 async def handle_buying(callback_query: CallbackQuery,
                         state: FSMContext):
+    product_id = int(str(callback_query.data).split("_")[1])
+    cart_id = await create_cart(callback_query.from_user.id)
+    logger.debug(f"cart_id: {cart_id}")
+    await state.update_data(cart_id=cart_id)
     await state.update_data(quantity=1)
+    await state.update_data(product_id=product_id)
     await callback_query.answer()
     await bot.send_message(chat_id=callback_query.from_user.id,
                            text="Выберите кол-во: 1",
@@ -184,4 +216,22 @@ async def handle_quantity_changing(callback_query: CallbackQuery,
         await state.update_data(quantity=quantity)
     await callback_query.message.edit_text(f"Выберите кол-во: {quantity}",
                                            reply_markup=app_kb.quantity_kb.as_markup())
+
+async def add_product_to_cart(product_id: int, 
+                              cart_id: int):
+    db = App_DB_Connection()
+    await db.connect()
+    query = """INSERT INTO product_in_cart (product_id, cart_id) VALUES ($1, $2);"""
+    await db.connection.execute(query, product_id, cart_id)
+
+
+@form_router.callback_query(lambda cb: cb.data == "continue")
+async def continue_to_purchase(callback_query: CallbackQuery,
+                               state: FSMContext):
+    await callback_query.answer()
+    data = await state.get_data()
+    product_id = data["product_id"]
+    await add_product_to_cart(product_id, data["cart_id"])
+    await bot.send_message(chat_id=callback_query.from_user.id,
+                           text=f"{product_id}")
 
