@@ -96,7 +96,7 @@ async def send_products(callback_query: CallbackQuery, category: str) -> None:
     logger.debug(f"category_id: {category_id}")
     
     async with App_DB_Connection() as db:
-        get_product = "SELECT id, photo_path, description FROM product WHERE category = $1;"
+        get_product = "SELECT id, photo_path, description FROM product WHERE category_id = $1;"
         products = await db.connection.fetch(get_product, category_id)
         logger.debug(products) 
         for product in products:

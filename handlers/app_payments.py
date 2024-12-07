@@ -11,7 +11,7 @@ from aiogram.types import PreCheckoutQuery
 from app_states import CartStates
 
 Configuration.account_id = SHOP_ID
-Configuration.secret_key = SHOP_SECRET_KEY
+Configuration.secret_key = SHOP_SECRET_KEY 
 
 
 @form_router.pre_checkout_query(CartStates.payment)
@@ -23,7 +23,6 @@ async def pre_checkout(pre_checkout_query: PreCheckoutQuery):
 @form_router.message(lambda message: not (message.successful_payment is None))
 async def process_successful_payment(message: types.Message,
                                      state: FSMContext):
-    logger.debug("HERE")
     try:
         data = await state.get_data()
         logger.debug(data)
