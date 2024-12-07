@@ -6,3 +6,6 @@ class CatalogStates(StatesGroup):
     subcategories = State()
     show_products = State()
     adjust_quantity = State()
+
+class CartStates(StatesGroup):
+    get_addres = State()
