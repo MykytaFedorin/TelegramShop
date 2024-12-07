@@ -16,7 +16,7 @@ async def get_customer_cart(customer_id: int):
     db = App_DB_Connection()
     await db.connect()
     query = "SELECT id FROM cart WHERE customer_id = $1;"
-    cart_id = db.connection.fetchval(query, customer_id)
+    cart_id = await db.connection.fetchval(query, customer_id)
     return cart_id
         
 
@@ -27,14 +27,21 @@ async def show_cart(callback_query: CallbackQuery):
     db = App_DB_Connection()
     await db.connect()
     query = """WITH products AS (
-    SELECT product_id 
+    SELECT product_id, quantity
     FROM product_in_cart 
     WHERE cart_id = $1
 )
-SELECT * 
-FROM product 
-WHERE product_id IN (SELECT product_id FROM products);
+SELECT 
+    p.title, 
+    p.price, 
+    pr.quantity
+FROM product p
+JOIN products pr ON p.id = pr.product_id;
 
-            """
-    products_in_cart = db.connection.fetch(user_cart_id)
-    logger.debug(products_in_cart)
+"""
+    products_in_cart = await db.connection.fetch(query, user_cart_id)
+    message = "Заказ:\n\n"
+    for product in products_in_cart:
+        message += f"{product['title']}\n {product['price']} {product['quantity']} "
+    await bot.send_message(chat_id=callback_query.from_user.id,
+                           text=message)
