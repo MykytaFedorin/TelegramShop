@@ -9,6 +9,7 @@ class CatalogStates(StatesGroup):
 
 class CartStates(StatesGroup):
     get_addres = State()
+    payment = State()
 
 class FaqStates(StatesGroup):
     faq = State()

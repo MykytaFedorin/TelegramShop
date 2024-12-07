@@ -8,9 +8,10 @@ from aiogram.fsm.context import FSMContext
 from app_states import CartStates
 from app_logger import logger
 from typing import Dict, List, Optional
-from data.config import root_categories, root_cat_titles
+from data.config import TELEGRAM_PAYMENT_TOKEN
 from app_filters import AppCbStateFilter
 from database.db_connection import App_DB_Connection
+from aiogram.types import LabeledPrice
 
 async def get_customer_cart(customer_id: int):
     db = App_DB_Connection()
@@ -95,12 +96,27 @@ async def ask_address(callback_query: CallbackQuery,
 @form_router.message(CartStates.get_addres)
 async def get_address(message: Message,
                       state: FSMContext):
-    address = message.text 
+    address = message.text
+    await state.update_data(address=address)
     db = App_DB_Connection()
     await db.connect()
-    data = await state.get_data()
-    cart_id = data["cart_id"]
-    query = """UPDATE cart SET delivery_info = $1, status = 'payed' WHERE id = $2;"""
-    await db.connection.execute(query, address, cart_id)
-    await message.answer("Спасибо")
+    query = """SELECT * FROM cart WHERE customer_id = $1 and status='pending'"""
+    carts = await db.connection.fetch(query, message.from_user.id)
+    if carts:
+        logger.debug(carts)
+        for cart in carts:
+            prices = [LabeledPrice(label=f"Заказ #{cart['id']}", amount=50000)]
+            await state.set_state(CartStates.payment)
+            await bot.send_invoice(
+                chat_id=message.chat.id,
+                title=f"Заказ #{cart['id']}",
+                description="Заказ в Telegram",
+                payload=f"{cart['id']}",  # Уникальный идентификатор
+                provider_token=TELEGRAM_PAYMENT_TOKEN,  # Токен от BotFather
+                currency="RUB",
+                prices=prices,
+                start_parameter="test-payment"
+            )
+    
+
     

@@ -253,4 +253,4 @@ async def continue_to_purchase(callback_query: CallbackQuery,
     await add_product_to_cart(product_id,
                               data["cart_id"],
                               quantity)
-    await show_cart(callback_query)
+    await show_cart(callback_query, state)
