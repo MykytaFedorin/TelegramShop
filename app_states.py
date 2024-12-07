@@ -9,3 +9,6 @@ class CatalogStates(StatesGroup):
 
 class CartStates(StatesGroup):
     get_addres = State()
+
+class FaqStates(StatesGroup):
+    faq = State()

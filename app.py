@@ -6,7 +6,7 @@ async def main() -> None:
     await init_titles()
     from app_logger import logger
     logger.debug(f"init app.py")
-    from handlers import form_router
+    from handlers import form_router, dp
     from loader import bot, dp
     dp.include_router(form_router)
     await dp.start_polling(bot)
