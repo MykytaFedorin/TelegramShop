@@ -12,6 +12,7 @@ from typing import Dict, List, Optional
 from data.config import root_categories, root_cat_titles
 from app_filters import AppCbStateFilter
 from database.db_connection import App_DB_Connection
+from handlers.cart import show_cart
 import app_queries
 
 logger.debug(f"init catalog.py {root_categories}")
@@ -252,6 +253,4 @@ async def continue_to_purchase(callback_query: CallbackQuery,
     await add_product_to_cart(product_id,
                               data["cart_id"],
                               quantity)
-    await bot.send_message(chat_id=callback_query.from_user.id,
-                           text=f"{product_id}")
-
+    await show_cart(callback_query)
